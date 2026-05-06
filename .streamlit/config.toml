@@ -1,0 +1,14 @@
+[theme]
+base="light"
+primaryColor="#f58220"
+backgroundColor="#fffaf5"
+secondaryBackgroundColor="#e9eefb"
+textColor="#253b80"
+font="Source Sans Pro:https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@400;600;700&display=swap"
+headingFont="Lora:https://fonts.googleapis.com/css2?family=Lora:wght@700&display=swap"
+codeFont="JetBrains Mono:https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap"
+baseFontSize=16
+baseFontWeight=400
+blueColor="#2f4a9e"
+linkColor="#2f4a9e"
+borderColor="#d8e0f4"
