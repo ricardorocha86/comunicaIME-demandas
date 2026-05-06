@@ -64,7 +64,7 @@ def upload_to_storage(file_bytes, file_name, mime_type):
         return None
 
 
-@st.cache_data(show_spinner=False)
+@st.cache_data(ttl=30, show_spinner=False)
 def _listar_documentos_cache(colecao):
     return FIREBASE.list_documents(colecao)
 
