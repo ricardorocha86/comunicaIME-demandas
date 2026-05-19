@@ -54,6 +54,7 @@ STATUS_PENDENTE = "Pendente"
 STATUS_EM_PRODUCAO_ARTES = "Em produ\u00e7\u00e3o das artes"
 STATUS_CONCLUIDO = "Conclu\u00eddo"
 STATUS_APROVADO_ENVIADO = "Aprovado e enviado"
+STATUS_ARQUIVADO = "Arquivado"
 
 
 def upload_to_storage(file_bytes, file_name, mime_type):
@@ -563,6 +564,10 @@ def status_eh_em_producao(status: str) -> bool:
 
 def status_eh_concluido(status: str) -> bool:
     return normalizar_status(status) == normalizar_status(STATUS_CONCLUIDO)
+
+
+def status_eh_arquivado(status: str) -> bool:
+    return normalizar_status(status) == normalizar_status(STATUS_ARQUIVADO)
 
 
 def montar_rotulo_solicitacao(sol: dict) -> str:
@@ -1818,6 +1823,12 @@ def page_todas_solicitacoes(tipo_pagina: str = "ambas"):
             "color": "#166534",
             "bg": "#f0fdf4",
         },
+        normalizar_status(STATUS_ARQUIVADO): {
+            "label": "Arquivado",
+            "icon": "\u26ab",
+            "color": "#4b5563",
+            "bg": "#f9fafb",
+        },
     }
 
     def normalizar_links_anexo(valor):
@@ -1918,6 +1929,8 @@ def page_todas_solicitacoes(tipo_pagina: str = "ambas"):
         for sol in dados:
             doc_id = valor_texto(sol.get("id"))
             if not doc_id:
+                continue
+            if status_eh_arquivado(sol.get("status")):
                 continue
 
             linha = sol.copy()
@@ -2086,6 +2099,55 @@ def page_todas_solicitacoes(tipo_pagina: str = "ambas"):
                 st.success("Solicita\u00e7\u00e3o atualizada com sucesso.")
                 _limpar_selecao()
                 st.rerun()
+
+            confirm_key = f"{key_prefix}_confirmar_arquivamento_doc"
+            if st.session_state.get(confirm_key) != doc_id:
+                arquivar = st.button(
+                    "Arquivar solicita\u00e7\u00e3o",
+                    type="secondary",
+                    use_container_width=True,
+                    key=f"{key_prefix}_btn_arquivar_solicitacao",
+                    help="Remove esta solicita\u00e7\u00e3o das filas operacionais.",
+                )
+                if arquivar:
+                    st.session_state[confirm_key] = doc_id
+                    st.rerun()
+            else:
+                st.warning("Confirme o arquivamento desta solicita\u00e7\u00e3o. Ela sair\u00e1 das filas operacionais.")
+                c_cancelar, c_confirmar = st.columns([1, 1])
+                with c_cancelar:
+                    cancelar_arquivo = st.button(
+                        "Cancelar",
+                        use_container_width=True,
+                        key=f"{key_prefix}_btn_cancelar_arquivamento",
+                    )
+                with c_confirmar:
+                    confirmar_arquivo = st.button(
+                        "Confirmar arquivamento",
+                        type="primary",
+                        use_container_width=True,
+                        key=f"{key_prefix}_btn_confirmar_arquivamento",
+                    )
+
+                if cancelar_arquivo:
+                    st.session_state.pop(confirm_key, None)
+                    st.rerun()
+
+                if confirmar_arquivo:
+                    campos = {
+                        "status": STATUS_ARQUIVADO,
+                        "data_arquivamento": datetime.now(),
+                    }
+
+                    ok = atualizar_documento(collection_name, doc_id, campos)
+                    if not ok:
+                        st.error("Falha ao arquivar a solicita\u00e7\u00e3o.")
+                        return
+
+                    st.session_state.pop(confirm_key, None)
+                    st.success("Solicita\u00e7\u00e3o arquivada com sucesso.")
+                    _limpar_selecao()
+                    st.rerun()
             return
 
         if status_norm == normalizar_status(STATUS_EM_PRODUCAO_ARTES):
