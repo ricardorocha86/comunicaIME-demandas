@@ -2383,6 +2383,122 @@ def page_todas_solicitacoes(tipo_pagina: str = "ambas"):
                         else:
                             st.markdown(f"🔗 [{nome_arq}]({link})")
 
+            if collection_name == "solicitacoes_eventos_transmissoes":
+                col_a, col_b, col_c = st.columns([1, 1, 1])
+
+                with col_a:
+                    st.markdown("#### \U0001F4CB Painel")
+                    st.markdown(
+                        f"**Status atual:** {badge_status_html(sol_sel.get('status', STATUS_PENDENTE))}",
+                        unsafe_allow_html=True,
+                    )
+                    st.markdown(
+                        f"**Respons\u00e1vel NEX:** {valor_texto(sol_sel.get('responsavel_nex')) or RESPONSAVEL_NEX_NAO_DEFINIDO}"
+                    )
+                    st.markdown(f"**Tipo:** {texto_campo('tipo_evento')}")
+
+                with col_b:
+                    st.markdown("#### \U0001F464 Solicitante")
+                    st.markdown(f"**Nome:** {texto_campo('solicitante')}")
+                    st.markdown(f"**E-mail:** {texto_campo('email')}")
+                    st.markdown(f"**Unidade:** {texto_campo('unidade')}")
+                    st.markdown(f"**Perfil:** {texto_campo('solicitando_como')}")
+
+                with col_c:
+                    st.markdown("#### \U0001F4C5 Evento")
+                    st.markdown(f"**Local:** {texto_campo('local_evento')}")
+                    st.markdown(f"**In\u00edcio:** {data_campo('periodo_inicio')}")
+                    st.markdown(f"**Fim:** {data_campo('periodo_fim')}")
+                    st.markdown(f"**Recebido em:** {data_campo('data_solicitacao')}")
+
+                c_desc, c_anex, c_acoes = st.columns([1, 1, 1])
+
+                with c_desc:
+                    st.markdown("#### \U0001F4DD Descri\u00e7\u00e3o da solicita\u00e7\u00e3o")
+                    render_texto_truncado(texto_campo("descricao"), f"{key_prefix}_descricao")
+                    apoios = texto_campo("apoios_necessarios", "")
+                    if apoios:
+                        st.markdown(f"**Apoios:** {apoios}")
+
+                with c_anex:
+                    st.markdown("#### \U0001F4CE Anexos")
+                    anexos_md = row_sel.get("_anexos_markdown", "Sem anexos.")
+                    st.markdown(anexos_md)
+
+                with c_acoes:
+                    st.markdown("#### \U0001F4AA\U0001F3FD Respons\u00e1vel NEX")
+                    if status_eh_pendente(sol_sel.get("status")):
+                        bloco_acoes_detalhe(collection_name, sol_sel, key_prefix, table_prefix=table_prefix)
+                    elif status_eh_concluido(sol_sel.get("status")):
+                        nome_responsavel = valor_texto(sol_sel.get("responsavel_nex")) or RESPONSAVEL_NEX_NAO_DEFINIDO
+                        st.info(f"Resposta submetida por **{nome_responsavel}**")
+                    elif normalizar_status(sol_sel.get("status")) == normalizar_status(STATUS_APROVADO_ENVIADO):
+                        nome_responsavel = valor_texto(sol_sel.get("responsavel_nex")) or RESPONSAVEL_NEX_NAO_DEFINIDO
+                        st.success(f"Conclu\u00eddo por **{nome_responsavel}**")
+                    else:
+                        nome_responsavel = valor_texto(sol_sel.get("responsavel_nex")) or RESPONSAVEL_NEX_NAO_DEFINIDO
+                        st.warning(f"Respons\u00e1vel NEX: **{nome_responsavel}**")
+
+                status_finalizado = normalizar_status(sol_sel.get("status")) == normalizar_status(STATUS_APROVADO_ENVIADO)
+
+                if status_eh_concluido(sol_sel.get("status")):
+                    resposta_obs = valor_texto(sol_sel.get("resposta_nex_obs")) or "Sem observa\u00e7\u00f5es."
+                    resposta_texto = valor_texto(sol_sel.get("resposta_nex_texto")) or "Sem texto de entrega."
+                    resposta_anexos = [
+                        u for u in (sol_sel.get("resposta_nex_anexos") or [])
+                        if isinstance(u, str) and u.strip()
+                    ]
+
+                    st.markdown("---")
+                    c_resp, c_entrega, c_conf = st.columns([1, 1, 1])
+
+                    with c_resp:
+                        st.markdown("#### \U0001F4DD Resposta da produ\u00e7\u00e3o")
+                        st.markdown("**Observa\u00e7\u00e3o**")
+                        st.markdown(resposta_obs)
+                        st.markdown("**Texto da entrega**")
+                        st.markdown(resposta_texto)
+
+                    with c_entrega:
+                        st.markdown("#### \U0001F4CE Anexos da entrega")
+                        render_entrega_anexos(resposta_anexos)
+
+                    with c_conf:
+                        st.markdown("#### \u2705 Conferir resposta")
+                        bloco_acoes_detalhe(collection_name, sol_sel, key_prefix, table_prefix=table_prefix)
+                elif status_finalizado:
+                    resposta_obs = valor_texto(sol_sel.get("resposta_nex_obs")) or "Sem observa\u00e7\u00f5es."
+                    resposta_texto = valor_texto(sol_sel.get("resposta_nex_texto")) or "Sem texto de entrega."
+                    resposta_anexos = [
+                        u for u in (sol_sel.get("resposta_nex_anexos") or [])
+                        if isinstance(u, str) and u.strip()
+                    ]
+                    parecer_final = valor_texto(sol_sel.get("parecer_coordenador")) or "Sem observa\u00e7\u00f5es da confer\u00eancia."
+
+                    st.markdown("---")
+                    c_resp, c_entrega, c_conf = st.columns([1, 1, 1])
+
+                    with c_resp:
+                        st.markdown("#### \U0001F4DD Resposta da produ\u00e7\u00e3o")
+                        st.markdown("**Observa\u00e7\u00e3o**")
+                        st.markdown(resposta_obs)
+                        st.markdown("**Texto da entrega**")
+                        st.markdown(resposta_texto)
+
+                    with c_entrega:
+                        st.markdown("#### \U0001F4CE Anexos da entrega")
+                        render_entrega_anexos(resposta_anexos)
+
+                    with c_conf:
+                        st.markdown("#### \u2705 Confer\u00eancia final")
+                        st.markdown(f"**Parecer:** {parecer_final}")
+                        st.markdown(f"**Finalizado em:** {data_campo('data_aprovacao_final')}")
+                        st.success("Solicita\u00e7\u00e3o finalizada.")
+                elif not status_eh_pendente(sol_sel.get("status")):
+                    bloco_acoes_detalhe(collection_name, sol_sel, key_prefix, table_prefix=table_prefix)
+
+                return
+
             if collection_name == "solicitacoes":
                 col_a, col_b, col_c = st.columns([1, 1, 1])
 
